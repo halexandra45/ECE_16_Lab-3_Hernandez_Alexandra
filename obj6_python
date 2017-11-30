@@ -1,0 +1,101 @@
+import serial
+import time
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy import signal
+import matplotlib.animation as animation
+
+
+#setting up serial communication
+ser = serial.Serial()
+ser.baudrate = 115200
+ser.port = 'COM3'
+ser.open() 
+
+
+#add a plot for the FuncAnimation to take in as parameter
+fig = plt.figure()
+#setting up three subplots for the function to update
+accel = fig.add_subplot(3,1,1)
+gyro = fig.add_subplot(3,1,2)
+emg = fig.add_subplot(3,1,3)
+#adjusting space between subplots
+fig.subplots_adjust(hspace=1)
+
+#window size
+size = 50
+
+#initilialize arrays for storing data
+data_ax = np.zeros(size)
+data_ay = np.zeros(size)
+data_az = np.zeros(size)
+data_gx = np.zeros(size)
+data_gy = np.zeros(size)
+data_gz = np.zeros(size)
+data_emg1 = np.zeros(size)
+data_emg2 = np.zeros(size)
+time1 = np.zeros(size)
+n = 0
+
+#define a function that got called for plotting
+def animate(i):
+    global data_ax,data_ay,data_az,data_gx,data_gy,data_gz,time1,n,data_emg1,data,data_emg2
+    arduinoData = ser.readline()
+
+    dec=arduinoData.decode()
+    a = dec.split("\t")
+    data_ax = data_ax[1:]
+    data_ax = np.append(data_ax,a[0])
+    data_ay = data_ay[1:]
+    data_ay = np.append(data_ay,a[1])
+    data_az = data_az[1:]
+    data_az = np.append(data_az,a[2])
+    data_gx = data_gx[1:]
+    data_gx = np.append(data_gx,a[3])
+    data_gy = data_gy[1:]
+    data_gy = np.append(data_gy,a[4])
+    data_gz = data_gz[1:]
+    data_gz = np.append(data_gz,a[5])
+    data_emg1 = data_emg1[1:]
+    data_emg1 = np.append(data_emg1,a[6])
+    data_emg2 = data_emg2[1:]
+    data_emg2 = np.append(data_emg2,a[7])
+
+    time1 = time1[1:]
+    time1 = np.append(time1,n)
+    n += 1
+ 
+    accel.clear()
+    accel.plot(time1,data_ax,'-r')
+    accel.plot(time1,data_ay,'-g')
+    accel.plot(time1,data_az,'-b')
+    accel.set_title('accelerometer')
+    accel.set_xlabel('time')
+    accel.set_ylabel('g')
+    
+    gyro.clear()
+    gyro.plot(time1,data_gx,'-r')
+    gyro.plot(time1,data_gy,'-g')
+    gyro.plot(time1,data_gz,'-b')
+    gyro.set_title('Gyroscope')
+    gyro.set_xlabel('time')
+    gyro.set_ylabel('degree/s')
+    
+    emg.clear()
+    emg.plot(time1,data_emg1,'-r')
+    emg.plot(time1,data_emg2,'-g')
+    emg.set_title('EMG')
+    emg.set_xlabel('time')
+    emg.set_ylabel('mV')
+    
+    
+    
+    
+
+#use the FuncAnimation function to call plotting functions every 5 miliseconds
+ani = animation.FuncAnimation(fig,animate,interval = 4,blit = False)
+
+plt.show()
+ser.close()
+
+ser.close() #close the port after the program reaches its end
